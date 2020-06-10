@@ -186,6 +186,7 @@ func invoke(disp *IDispatch, dispid int32, dispatch int16, params ...interface{}
 		0)
 	if hr != 0 {
 		err = NewErrorWithSubError(hr, BstrToString(excepInfo.bstrDescription), excepInfo)
+		excepInfo.Clear()
 	}
 	for i, varg := range vargs {
 		n := len(params) - i - 1

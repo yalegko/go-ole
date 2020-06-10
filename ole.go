@@ -3,6 +3,7 @@ package ole
 import (
 	"fmt"
 	"strings"
+	"unsafe"
 )
 
 // DISPPARAMS are the arguments that passed to methods or property.
@@ -24,6 +25,28 @@ type EXCEPINFO struct {
 	pvReserved        uintptr
 	pfnDeferredFillIn uintptr
 	scode             uint32
+}
+
+// Clear frees BSTR strings inside an EXCEPINFO and set it to NULL.
+func (e *EXCEPINFO) Clear() {
+	freeBSTR := func(s *uint16) {
+		// SysFreeString don't return errors and is safe for call's on NULL.
+		// https://docs.microsoft.com/en-us/windows/win32/api/oleauto/nf-oleauto-sysfreestring
+		_ = SysFreeString((*int16)(unsafe.Pointer(s)))
+	}
+
+	if e.bstrSource != nil {
+		freeBSTR(e.bstrSource)
+		e.bstrSource = nil
+	}
+	if e.bstrDescription != nil {
+		freeBSTR(e.bstrDescription)
+		e.bstrDescription = nil
+	}
+	if e.bstrHelpFile != nil {
+		freeBSTR(e.bstrHelpFile)
+		e.bstrHelpFile = nil
+	}
 }
 
 // WCode return wCode in EXCEPINFO.
