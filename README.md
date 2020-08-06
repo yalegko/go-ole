@@ -2,18 +2,25 @@
 
 [![Build status](https://ci.appveyor.com/api/projects/status/qr0u2sf7q43us9fj?svg=true)](https://ci.appveyor.com/project/jacobsantos/go-ole-jgs28)
 [![Build Status](https://travis-ci.org/go-ole/go-ole.svg?branch=master)](https://travis-ci.org/go-ole/go-ole)
-[![GoDoc](https://godoc.org/github.com/go-ole/go-ole?status.svg)](https://godoc.org/github.com/go-ole/go-ole)
+[![GoDoc](https://godoc.org/github.com/bi-zone/go-ole?status.svg)](https://godoc.org/github.com/bi-zone/go-ole)
 
 Go bindings for Windows COM using shared libraries instead of cgo.
 
 By Yasuhiro Matsumoto.
+
+## Fork Features
+Fork contains the following bug fixes until them will be merged to the upstream:
+- https://github.com/go-ole/go-ole/pull/199
+- https://github.com/go-ole/go-ole/pull/201
+
+Go module is renamed to the fork name to be able to use it in libs without replace trick.
 
 ## Install
 
 To experiment with go-ole, you can just compile and run the example program:
 
 ```
-go get github.com/go-ole/go-ole
+go get github.com/bi-zone/go-ole
 cd /path/to/go-ole/
 go test
 

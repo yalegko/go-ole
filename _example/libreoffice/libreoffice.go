@@ -38,8 +38,8 @@ import (
 	"fmt"
 	"log"
 
-	ole "github.com/go-ole/go-ole"
-	"github.com/go-ole/go-ole/oleutil"
+	ole "github.com/bi-zone/go-ole"
+	"github.com/bi-zone/go-ole/oleutil"
 )
 
 func checkError(err error, msg string) {
