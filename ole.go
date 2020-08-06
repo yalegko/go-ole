@@ -2,6 +2,7 @@ package ole
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 	"unsafe"
 )
@@ -27,8 +28,19 @@ type EXCEPINFO struct {
 	scode             uint32
 }
 
+// NewEXCEPINFO creates a new empty EXCEPINFO instance that is ready to be
+// passed into API calls. EXCEPINFO should be cleared after use, so
+// NewEXCEPINFO sets a runtime finalizer on created structure instance.
+func NewEXCEPINFO() *EXCEPINFO {
+	e := new(EXCEPINFO)
+	runtime.SetFinalizer(e, (*EXCEPINFO).Clear)
+	return e
+}
+
 // Clear frees BSTR strings inside an EXCEPINFO and set it to NULL.
 func (e *EXCEPINFO) Clear() {
+	runtime.SetFinalizer(e, nil) // no need for a finalizer anymore
+
 	freeBSTR := func(s *uint16) {
 		// SysFreeString don't return errors and is safe for call's on NULL.
 		// https://docs.microsoft.com/en-us/windows/win32/api/oleauto/nf-oleauto-sysfreestring

@@ -170,7 +170,7 @@ func invoke(disp *IDispatch, dispid int32, dispatch int16, params ...interface{}
 	}
 
 	result = new(VARIANT)
-	var excepInfo EXCEPINFO
+	excepInfo := NewEXCEPINFO()
 	VariantInit(result)
 	hr, _, _ := syscall.Syscall9(
 		disp.VTable().Invoke,
@@ -182,11 +182,10 @@ func invoke(disp *IDispatch, dispid int32, dispatch int16, params ...interface{}
 		uintptr(dispatch),
 		uintptr(unsafe.Pointer(&dispparams)),
 		uintptr(unsafe.Pointer(result)),
-		uintptr(unsafe.Pointer(&excepInfo)),
+		uintptr(unsafe.Pointer(excepInfo)),
 		0)
 	if hr != 0 {
 		err = NewErrorWithSubError(hr, BstrToString(excepInfo.bstrDescription), excepInfo)
-		excepInfo.Clear()
 	}
 	for i, varg := range vargs {
 		n := len(params) - i - 1
