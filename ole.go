@@ -2,7 +2,6 @@ package ole
 
 import (
 	"fmt"
-	"runtime"
 	"strings"
 	"unsafe"
 )
@@ -26,21 +25,38 @@ type EXCEPINFO struct {
 	pvReserved        uintptr
 	pfnDeferredFillIn uintptr
 	scode             uint32
+
+	// Go-specific part. Don't move upper cos it'll break structure layout for native code.
+	rendered    bool
+	source      string
+	description string
+	helpFile    string
 }
 
-// NewEXCEPINFO creates a new empty EXCEPINFO instance that is ready to be
-// passed into API calls. EXCEPINFO should be cleared after use, so
-// NewEXCEPINFO sets a runtime finalizer on created structure instance.
-func NewEXCEPINFO() *EXCEPINFO {
-	e := new(EXCEPINFO)
-	runtime.SetFinalizer(e, (*EXCEPINFO).Clear)
-	return e
+// renderStrings translates BSTR strings to Go ones so `.Error` and `.String`
+// could be safely called after `.Clear`. We need this when we can't rely on
+// a caller to call `.Clear`.
+func (e *EXCEPINFO) renderStrings() {
+	e.rendered = true
+	if e.bstrSource == nil {
+		e.source = "<nil>"
+	} else {
+		e.source = BstrToString(e.bstrSource)
+	}
+	if e.bstrDescription == nil {
+		e.description = "<nil>"
+	} else {
+		e.description = BstrToString(e.bstrDescription)
+	}
+	if e.bstrHelpFile == nil {
+		e.helpFile = "<nil>"
+	} else {
+		e.helpFile = BstrToString(e.bstrHelpFile)
+	}
 }
 
 // Clear frees BSTR strings inside an EXCEPINFO and set it to NULL.
 func (e *EXCEPINFO) Clear() {
-	runtime.SetFinalizer(e, nil) // no need for a finalizer anymore
-
 	freeBSTR := func(s *uint16) {
 		// SysFreeString don't return errors and is safe for call's on NULL.
 		// https://docs.microsoft.com/en-us/windows/win32/api/oleauto/nf-oleauto-sysfreestring
@@ -73,48 +89,23 @@ func (e EXCEPINFO) SCODE() uint32 {
 
 // String convert EXCEPINFO to string.
 func (e EXCEPINFO) String() string {
-	var src, desc, hlp string
-	if e.bstrSource == nil {
-		src = "<nil>"
-	} else {
-		src = BstrToString(e.bstrSource)
-	}
-
-	if e.bstrDescription == nil {
-		desc = "<nil>"
-	} else {
-		desc = BstrToString(e.bstrDescription)
-	}
-
-	if e.bstrHelpFile == nil {
-		hlp = "<nil>"
-	} else {
-		hlp = BstrToString(e.bstrHelpFile)
-	}
-
 	return fmt.Sprintf(
 		"wCode: %#x, bstrSource: %v, bstrDescription: %v, bstrHelpFile: %v, dwHelpContext: %#x, scode: %#x",
-		e.wCode, src, desc, hlp, e.dwHelpContext, e.scode,
+		e.wCode, e.source, e.description, e.helpFile, e.dwHelpContext, e.scode,
 	)
 }
 
 // Error implements error interface and returns error string.
 func (e EXCEPINFO) Error() string {
-	if e.bstrDescription != nil {
-		return strings.TrimSpace(BstrToString(e.bstrDescription))
-	}
-
-	src := "Unknown"
-	if e.bstrSource != nil {
-		src = BstrToString(e.bstrSource)
+	if e.description != "<nil>" {
+		return strings.TrimSpace(e.description)
 	}
 
 	code := e.scode
 	if e.wCode != 0 {
 		code = uint32(e.wCode)
 	}
-
-	return fmt.Sprintf("%v: %#x", src, code)
+	return fmt.Sprintf("%v: %#x", e.source, code)
 }
 
 // PARAMDATA defines parameter data type.
