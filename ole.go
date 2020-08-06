@@ -89,6 +89,9 @@ func (e EXCEPINFO) SCODE() uint32 {
 
 // String convert EXCEPINFO to string.
 func (e EXCEPINFO) String() string {
+	if !e.rendered {
+		e.renderStrings()
+	}
 	return fmt.Sprintf(
 		"wCode: %#x, bstrSource: %v, bstrDescription: %v, bstrHelpFile: %v, dwHelpContext: %#x, scode: %#x",
 		e.wCode, e.source, e.description, e.helpFile, e.dwHelpContext, e.scode,
@@ -97,6 +100,10 @@ func (e EXCEPINFO) String() string {
 
 // Error implements error interface and returns error string.
 func (e EXCEPINFO) Error() string {
+	if !e.rendered {
+		e.renderStrings()
+	}
+
 	if e.description != "<nil>" {
 		return strings.TrimSpace(e.description)
 	}
